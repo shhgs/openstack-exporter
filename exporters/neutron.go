@@ -27,6 +27,7 @@ var defaultNeutronMetrics = []Metric{
 	{Name: "networks", Fn: ListNetworks},
 	{Name: "security_groups", Fn: ListSecGroups},
 	{Name: "subnets", Fn: ListSubnets},
+	{Name: "subnet", Labels: []string{"id", "network_id", "project_id", "dhcp_enabled"}},
 	{Name: "port", Labels: []string{"uuid", "network_id", "mac_address", "device_owner", "status", "binding_vif_type", "admin_state_up"}, Fn: ListPorts},
 	{Name: "ports"},
 	{Name: "ports_no_ips"},
@@ -188,6 +189,13 @@ func ListSubnets(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) e
 	}
 	ch <- prometheus.MustNewConstMetric(exporter.Metrics["subnets"].Metric,
 		prometheus.GaugeValue, float64(len(allSubnets)))
+
+	for _, subnet := range allSubnets {
+		ch <- prometheus.MustNewConstMetric(exporter.Metrics["subnet"].Metric,
+			prometheus.GaugeValue, float64(1), subnet.ID,
+			subnet.NetworkID, subnet.ProjectID,
+			strconv.FormatBool(subnet.EnableDHCP))
+	}
 
 	return nil
 }

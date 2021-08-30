@@ -80,6 +80,10 @@ openstack_neutron_security_groups 1
 # HELP openstack_neutron_subnets subnets
 # TYPE openstack_neutron_subnets gauge
 openstack_neutron_subnets 2
+# HELP openstack_neutron_subnet subnet
+# TYPE openstack_neutron_subnet gauge
+openstack_neutron_subnet{dhcp_enabled="true",id="08eae331-0402-425a-923c-34f7cfe39c1b",network_id="db193ab3-96e3-4cb3-8fc5-05f4296d0324",project_id="26a7980765d0414dbc1fc1f88cdb7e6e"} 1
+openstack_neutron_subnet{dhcp_enabled="true",id="54d6f61d-db07-451c-9ab3-b9609b6b6f0b",network_id="d32019d3-bc6e-4319-9c1d-6722fc136a22",project_id="4fd44f30292945e481c7b8a0c8908869"} 1
 # HELP openstack_neutron_up up
 # TYPE openstack_neutron_up gauge
 openstack_neutron_up 1
