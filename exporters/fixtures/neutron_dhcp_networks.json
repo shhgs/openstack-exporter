@@ -1,0 +1,17 @@
+[
+  {
+    "ID": "9177e86d-6c04-4822-8bb0-7a8ec1c14a76",
+    "Name": "test-network-1",
+    "Subnets": [
+      "839f1d2e-8337-4449-9cb4-6a011e94de93"
+    ]
+  },
+  {
+    "ID": "4e38751b-3a44-450f-9253-d3d206a6314c",
+    "Name": "test-network-2",
+    "Subnets": [
+      "3cc841d6-f056-4a82-9c87-37ef21a19b71"
+    ]
+  }
+]
+

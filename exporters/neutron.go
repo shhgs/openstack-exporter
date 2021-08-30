@@ -29,6 +29,7 @@ var defaultNeutronMetrics = []Metric{
 	{Name: "subnets", Fn: ListSubnets},
 	{Name: "subnet", Labels: []string{"id", "network_id", "project_id", "dhcp_enabled"}},
 	{Name: "port", Labels: []string{"uuid", "network_id", "mac_address", "device_owner", "status", "binding_vif_type", "admin_state_up"}, Fn: ListPorts},
+	{Name: "network_dhcpagent_association", Fn: ListNetworkDHCPAgentAssociation, Labels: []string{"network_id", "dhcp_agent", "host", "admin_state_up", "agent_alive"}},
 	{Name: "ports"},
 	{Name: "ports_no_ips"},
 	{Name: "ports_lb_not_active"},
@@ -344,5 +345,35 @@ func ListRouters(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) e
 	ch <- prometheus.MustNewConstMetric(exporter.Metrics["routers_not_active"].Metric,
 		prometheus.GaugeValue, float64(failedRouters))
 
+	return nil
+}
+
+// ListNetworkDHCPAgentAssociation enumerate the network-dhcpagent association
+func ListNetworkDHCPAgentAssociation(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) error {
+	allPagesAgents, err := agents.List(exporter.Client, agents.ListOpts{AgentType: "DHCP agent"}).AllPages()
+	if err != nil {
+		return err
+	}
+	dhcpAgents, err := agents.ExtractAgents(allPagesAgents)
+	if err != nil {
+		return err
+	}
+	for _, agent := range dhcpAgents {
+		networks, err := agents.ListDHCPNetworks(exporter.Client, agent.ID).Extract()
+		if err != nil {
+			return err
+		}
+
+		adminStateUp := "down"
+		if agent.AdminStateUp {
+			adminStateUp = "up"
+		}
+
+		for _, network := range networks {
+			ch <- prometheus.MustNewConstMetric(exporter.Metrics["network_dhcpagent_association"].Metric,
+				prometheus.GaugeValue, float64(1), network.ID, agent.ID, agent.Host,
+				adminStateUp, strconv.FormatBool(agent.Alive))
+		}
+	}
 	return nil
 }
