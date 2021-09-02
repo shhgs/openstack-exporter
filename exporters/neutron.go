@@ -40,6 +40,7 @@ var defaultNeutronMetrics = []Metric{
 	{Name: "agent_state", Labels: []string{"id", "hostname", "service", "adminState"}, Fn: ListAgentStates},
 	{Name: "network_ip_availabilities_total", Labels: []string{"network_id", "network_name", "ip_version", "cidr", "subnet_name", "project_id"}, Fn: ListNetworkIPAvailabilities},
 	{Name: "network_ip_availabilities_used", Labels: []string{"network_id", "network_name", "ip_version", "cidr", "subnet_name", "project_id"}},
+	{Name: "dragent_bgpspeaker_association", Fn: ListDRAgentBGPSpeakerAssociation, Labels: []string{"speaker_id", "dragent"}},
 }
 
 // NewNeutronExporter : returns a pointer to NeutronExporter
@@ -373,6 +374,30 @@ func ListNetworkDHCPAgentAssociation(exporter *BaseOpenStackExporter, ch chan<- 
 			ch <- prometheus.MustNewConstMetric(exporter.Metrics["network_dhcpagent_association"].Metric,
 				prometheus.GaugeValue, float64(1), network.ID, agent.ID, agent.Host,
 				adminStateUp, strconv.FormatBool(agent.Alive))
+		}
+	}
+	return nil
+}
+
+// ListDRAgentBGPSpeakerAssociation enumerate the BGP Agent and Speaker association
+func ListDRAgentBGPSpeakerAssociation(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) error {
+	const bgp_agent_type = "BGP dynamic routing agent"
+	allPagesAgents, err := agents.List(exporter.Client, agents.ListOpts{AgentType: bgp_agent_type}).AllPages()
+	if err != nil {
+		return err
+	}
+	dragents, err := agents.ExtractAgents(allPagesAgents)
+	if err != nil {
+		return err
+	}
+	for _, agent := range dragents {
+		speakers, err := agents.ListBGPSpeakers(exporter.Client, agent.ID).Extract()
+		if err != nil {
+			return err
+		}
+		for _, speaker := range speakers {
+			ch <- prometheus.MustNewConstMetric(exporter.Metrics["dragent_bgpspeaker_association"].Metric,
+				prometheus.GaugeValue, float64(1), speaker.ID, agent.ID)
 		}
 	}
 	return nil

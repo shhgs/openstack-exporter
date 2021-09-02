@@ -15,3 +15,5 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
+
+replace github.com/gophercloud/gophercloud v0.18.0 => /home/jhuang3/go/src/github.com/gophercloud/gophercloud
