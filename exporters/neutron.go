@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/agents"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/bgp/speaker"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/networkipavailabilities"
@@ -351,29 +352,34 @@ func ListRouters(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) e
 
 // ListNetworkDHCPAgentAssociation enumerate the network-dhcpagent association
 func ListNetworkDHCPAgentAssociation(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) error {
-	allPagesAgents, err := agents.List(exporter.Client, agents.ListOpts{AgentType: "DHCP agent"}).AllPages()
+	const dhcpAgentType = "DHCP agent"
+	allPagesAgents, err := agents.List(exporter.Client, agents.ListOpts{}).AllPages()
 	if err != nil {
 		return err
 	}
-	dhcpAgents, err := agents.ExtractAgents(allPagesAgents)
+
+	allAgents, err := agents.ExtractAgents(allPagesAgents)
 	if err != nil {
 		return err
 	}
-	for _, agent := range dhcpAgents {
-		networks, err := agents.ListDHCPNetworks(exporter.Client, agent.ID).Extract()
-		if err != nil {
-			return err
-		}
+	for _, agent := range allAgents {
+		// To satisfy the test case
+		if agent.AgentType == dhcpAgentType {
+			networks, err := agents.ListDHCPNetworks(exporter.Client, agent.ID).Extract()
+			if err != nil {
+				return err
+			}
 
-		adminStateUp := "down"
-		if agent.AdminStateUp {
-			adminStateUp = "up"
-		}
+			adminStateUp := "down"
+			if agent.AdminStateUp {
+				adminStateUp = "up"
+			}
 
-		for _, network := range networks {
-			ch <- prometheus.MustNewConstMetric(exporter.Metrics["network_dhcpagent_association"].Metric,
-				prometheus.GaugeValue, float64(1), network.ID, agent.ID, agent.Host,
-				adminStateUp, strconv.FormatBool(agent.Alive))
+			for _, network := range networks {
+				ch <- prometheus.MustNewConstMetric(exporter.Metrics["network_dhcpagent_association"].Metric,
+					prometheus.GaugeValue, float64(1), network.ID, agent.ID, agent.Host,
+					adminStateUp, strconv.FormatBool(agent.Alive))
+			}
 		}
 	}
 	return nil
@@ -381,23 +387,28 @@ func ListNetworkDHCPAgentAssociation(exporter *BaseOpenStackExporter, ch chan<- 
 
 // ListDRAgentBGPSpeakerAssociation enumerate the BGP Agent and Speaker association
 func ListDRAgentBGPSpeakerAssociation(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) error {
-	const bgp_agent_type = "BGP dynamic routing agent"
-	allPagesAgents, err := agents.List(exporter.Client, agents.ListOpts{AgentType: bgp_agent_type}).AllPages()
+	const bgpAgentType = "BGP dynamic routing agent"
+	// Testing does not support filter by agent type
+	allPagesAgents, err := agents.List(exporter.Client, agents.ListOpts{}).AllPages()
 	if err != nil {
 		return err
 	}
-	dragents, err := agents.ExtractAgents(allPagesAgents)
+	allAgents, err := agents.ExtractAgents(allPagesAgents)
 	if err != nil {
 		return err
 	}
-	for _, agent := range dragents {
-		speakers, err := agents.ListBGPSpeakers(exporter.Client, agent.ID).Extract()
-		if err != nil {
-			return err
-		}
-		for _, speaker := range speakers {
-			ch <- prometheus.MustNewConstMetric(exporter.Metrics["dragent_bgpspeaker_association"].Metric,
-				prometheus.GaugeValue, float64(1), speaker.ID, agent.ID)
+	for _, agent := range allAgents {
+		// To satisfy the test case
+		if agent.AgentType == bgpAgentType {
+			pages, err := agents.ListBGPSpeakers(exporter.Client, agent.ID).AllPages()
+			if err != nil {
+				return err
+			}
+			allSpeakers, err := speaker.ExtractBGPSpeakers(pages)
+			for _, speaker := range allSpeakers {
+				ch <- prometheus.MustNewConstMetric(exporter.Metrics["dragent_bgpspeaker_association"].Metric,
+					prometheus.GaugeValue, float64(1), speaker.ID, agent.ID)
+			}
 		}
 	}
 	return nil
