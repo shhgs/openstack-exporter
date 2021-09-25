@@ -89,6 +89,8 @@ var fixtures map[string]string = map[string]string{
 	"/neutron/v2.0/ports":                     "neutron_ports",
 	"/neutron/v2.0/network-ip-availabilities": "neutron_network_ip_availabilities",
 	"/neutron/v2.0/routers":                   "neutron_routers",
+	"/neutron/v2.0/agents?agent_type=BGP+dynamic+routing+agent":                 "neutron_dragents",
+	"/neutron/v2.0/agents?agent_type=DHCP+agent":                                "neutron_dhcp_agents",
 	"/neutron/v2.0/agents/3a5b0f7e-9eff-4989-b0f7-fd39d14e6ade/bgp-drinstances": "neutron_bgp_drinstances",
 	"/neutron/v2.0/agents/840d5d68-5759-4e9e-812f-f3bd19214c7f/dhcp-networks":   "neutron_dhcp_networks",
 	"/neutron/v2.0/routers/f8a44de0-fc8e-45df-93c7-f79bf3b01c95/l3-agents":      "neutron_routers_l3_agents",
