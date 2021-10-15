@@ -398,6 +398,9 @@ func ListDRAgentBGPSpeakerAssociation(exporter *BaseOpenStackExporter, ch chan<-
 			return err
 		}
 		allSpeakers, err := speaker.ExtractBGPSpeakers(pages)
+		if err != nil {
+			return err
+		}
 		for _, speaker := range allSpeakers {
 			ch <- prometheus.MustNewConstMetric(exporter.Metrics["dragent_bgpspeaker_association"].Metric,
 				prometheus.GaugeValue, float64(1), speaker.ID, agent.ID)
